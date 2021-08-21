@@ -128,8 +128,10 @@ def check_announcements(d):
 
                                         if len(candles)>=30:                                      
 
-                                            # Subject
+                                            # Subject , Headline and attachment
                                             subject = doc['NEWSSUB']
+                                            headline = doc['HEADLINE']
+                                            attatchment = f'https://www.bseindia.com/xml-data/corpfiling/AttachLive/{doc["ATTACHMENTNAME"]}'
                                            
                                             # Promoter Holding 
 
@@ -153,7 +155,7 @@ def check_announcements(d):
                                                 csvwriter = csv.writer(csvfile) 
                                                     
                                                 # writing the fields 
-                                                csvwriter.writerow([symbol,exchange,news_datetime_string,subject,percent_change2,percent_change5,percent_change10,percent_change15,percent_change30,market_cap]) 
+                                                csvwriter.writerow([symbol,exchange,news_datetime_string,subject,headline,attatchment,percent_change2,percent_change5,percent_change10,percent_change15,percent_change30,market_cap,]) 
                                                     
                                             break
                 
