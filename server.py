@@ -10,7 +10,7 @@ import pymongo
 from pymongo import MongoClient
 import csv
 
-authorization_string = 'token 26ud7j6qh471oabu:xbU6v5zaQkUpojoAJIDd1b32zcS5Z1ew'
+authorization_string = 'token 26ud7j6qh471oabu:eRah1dRECTF6pju0N04m0PUj3XrGl18J'
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
@@ -107,57 +107,64 @@ def check_announcements(d):
                         from_time_datetime = datetime.datetime.strptime(from_time,'%Y-%m-%d+%H:%M:%S')
                         # print(from_time_datetime ,from_time_datetime + datetime.timedelta(minutes=5))
 
-                        if (from_time_datetime < market_close_time - datetime.timedelta(minutes=30)):
-                            to_time = datetime.datetime.strftime(from_time_datetime + datetime.timedelta(minutes=30),'%Y-%m-%d+%H:%M:%S')
-                            with open('.csv') as csv_file:
-                                csv_reader = csv.reader(csv_file, delimiter=',')
-                            
-                                for row in csv_reader:
+                       
+                        to_time = datetime.datetime.strftime(from_time_datetime + datetime.timedelta(minutes=30),'%Y-%m-%d+%H:%M:%S')
+                        with open('.csv') as csv_file:
+                            csv_reader = csv.reader(csv_file, delimiter=',')
+                        
+                            for row in csv_reader:
+                                
+                                if (row[2]==symbol and row[11]==exchange):
+                                    print(f'\t tradingsymbol:{row[2]} exchange: {row[11]} ')
+                                    url = f'https://api.kite.trade/instruments/historical/{row[0]}/minute?from={from_time}&to={to_time}'
                                     
-                                    if (row[2]==symbol and row[11]==exchange):
-                                        print(f'\t tradingsymbol:{row[2]} exchange: {row[11]} ')
-                                        url = f'https://api.kite.trade/instruments/historical/{row[0]}/minute?from={from_time}&to={to_time}'
-                                        
-                                        resp = requests.get(url, headers={'X-Kite-Version': '3','Authorization':authorization_string})
-                                        parsed_response = json.loads(resp.content.decode("UTF-8"))
+                                    resp = requests.get(url, headers={'X-Kite-Version': '3','Authorization':authorization_string})
+                                    parsed_response = json.loads(resp.content.decode("UTF-8"))
 
-                                        candles = parsed_response['data']['candles']
+                                    candles = parsed_response['data']['candles']
+                                                                   
+
+                                    # Subject , Headline, More and attachment
+                                    subject = doc['NEWSSUB']
+                                    headline = doc['HEADLINE']
+                                    more = doc['MORE']
+                                    attatchment = f'https://www.bseindia.com/xml-data/corpfiling/AttachLive/{doc["ATTACHMENTNAME"]}'
+
+                                    percent_change2 = "Markets Closed/ Data unavailable"
+                                    percent_change5 = "Markets Closed/ Data unavailable"
+                                    percent_change10 = "Markets Closed/ Data unavailable"
+                                    percent_change15 = "Markets Closed/ Data unavailable"
+                                    percent_change30 = "Markets Closed/ Data unavailable"
+
+
+                                    if len(candles)>=2:   
+                                        # percentage change in 2 mins
+                                        percent_change2 = ((candles[1][4] - candles[0][1])/candles[0][1])*100
                                     
+                                    if len(candles)>=5:   
+                                        # percentage change in 5 mins
+                                        percent_change5 = ((candles[4][4] - candles[0][1])/candles[0][1])*100
+
+                                    if len(candles)>=10:   
+                                        # percentage change in 10 mins
+                                        percent_change10 = ((candles[9][4] - candles[0][1])/candles[0][1])*100
                                     
-                                    
+                                    if len(candles)>=15:   
+                                        # percentage change in 15 mins
+                                        percent_change15 = ((candles[14][4] - candles[0][1])/candles[0][1])*100
 
-                                        if len(candles)>=30:                                      
+                                    if len(candles)>=30:   
+                                        # percentage change in 30 mins
+                                        percent_change30 = ((candles[29][4] - candles[0][1])/candles[0][1])*100
 
-                                            # Subject , Headline and attachment
-                                            subject = doc['NEWSSUB']
-                                            headline = doc['HEADLINE']
-                                            attatchment = f'https://www.bseindia.com/xml-data/corpfiling/AttachLive/{doc["ATTACHMENTNAME"]}'
-                                           
-                                            # Promoter Holding 
-
-                                            # percentage change in 2 mins
-                                            percent_change2 = ((candles[1][4] - candles[0][1])/candles[0][1])*100
-
-                                            # percentage change in 5 mins
-                                            percent_change5 = ((candles[4][4] - candles[0][1])/candles[0][1])*100
-
-                                            # percentage change in 10 mins
-                                            percent_change10 = ((candles[9][4] - candles[0][1])/candles[0][1])*100
-                    
-                                            # percentage change in 15 mins
-                                            percent_change15 = ((candles[14][4] - candles[0][1])/candles[0][1])*100
-
-                                            # percentage change in 30 mins
-                                            percent_change30 = ((candles[29][4] - candles[0][1])/candles[0][1])*100
-
-                                            with open('result.csv', 'a') as csvfile: 
-                                                # creating a csv writer object 
-                                                csvwriter = csv.writer(csvfile) 
-                                                    
-                                                # writing the fields 
-                                                csvwriter.writerow([symbol,exchange,news_datetime_string,subject,headline,attatchment,percent_change2,percent_change5,percent_change10,percent_change15,percent_change30,market_cap,]) 
-                                                    
-                                            break
+                                    with open('result.csv', 'a') as csvfile: 
+                                        # creating a csv writer object 
+                                        csvwriter = csv.writer(csvfile) 
+                                            
+                                        # writing the fields 
+                                        csvwriter.writerow([symbol,exchange,news_datetime_string,subject,headline,more,attatchment,percent_change2,percent_change5,percent_change10,percent_change15,percent_change30,market_cap,]) 
+                                            
+                                    break
                 
 
            
@@ -168,7 +175,7 @@ dates = ["20210701","20210702","20210705","20210706","20210707","20210708","2021
 for d in dates:
     check_announcements(d) 
 
-check_announcements() 
+
 
 # *******SERVER******
 port = int(os.getenv('PORT', 80))
